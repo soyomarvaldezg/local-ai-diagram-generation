@@ -6,6 +6,7 @@ import ReactFlow, {
   useReactFlow,
 } from "reactflow";
 import CustomNode from "./CustomNode";
+import AnimatedEdge from "./AnimatedEdge";
 import ExportMenu from "./ExportMenu";
 
 function DiagramCanvas({
@@ -18,6 +19,7 @@ function DiagramCanvas({
   prompt,
 }) {
   const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
+  const edgeTypes = useMemo(() => ({ animated: AnimatedEdge }), []);
   const reactFlowInstance = useReactFlow();
 
   return (
@@ -43,6 +45,7 @@ function DiagramCanvas({
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           attributionPosition="bottom-left"
           minZoom={0.1}

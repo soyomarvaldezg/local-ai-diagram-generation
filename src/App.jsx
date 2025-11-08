@@ -4,6 +4,10 @@ import "reactflow/dist/style.css";
 import { generateDiagram, transcribeAudio } from "./services/aiService";
 import { mermaidToReactFlow } from "./services/mermaidParser";
 import { getAvailableProviders } from "./services/providerConfig";
+import {
+  applyParticleAnimation,
+  injectAnimationCSS,
+} from "./services/animationService";
 import DiagramCanvas from "./components/DiagramCanvas";
 
 function App() {
@@ -20,6 +24,11 @@ function App() {
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+
+  // Inject animation CSS on mount
+  useEffect(() => {
+    injectAnimationCSS();
+  }, []);
 
   useEffect(() => {
     const providers = getAvailableProviders();
@@ -113,8 +122,11 @@ function App() {
         throw new Error("No diagram elements generated");
       }
 
+      // Always apply particle animation to edges
+      const animatedEdges = applyParticleAnimation(newEdges);
+
       setNodes(newNodes);
-      setEdges(newEdges);
+      setEdges(animatedEdges);
     } catch (err) {
       setError(
         `Failed to generate diagram with ${selectedProvider}. ${err.message}`,
