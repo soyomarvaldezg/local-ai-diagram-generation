@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -10,6 +10,7 @@ import "reactflow/dist/style.css";
 import { generateDiagram, transcribeAudio } from "./services/aiService";
 import { mermaidToReactFlow } from "./services/mermaidParser";
 import { getAvailableProviders } from "./services/providerConfig";
+import CustomNode from "./components/CustomNode";
 
 function App() {
   const [prompt, setPrompt] = useState("");
@@ -24,6 +25,9 @@ function App() {
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+
+  // Register custom node types
+  const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
 
   useEffect(() => {
     const providers = getAvailableProviders();
@@ -80,7 +84,6 @@ function App() {
 
     try {
       const text = await transcribeAudio(audioBlob);
-      // Append to existing text with a space
       setPrompt((prev) => (prev ? `${prev} ${text}` : text));
     } catch (err) {
       setError("Failed to transcribe audio. Please try again.");
@@ -187,7 +190,7 @@ function App() {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Describe your diagram in English or Spanish... (e.g., 'Create a data pipeline: MySQL → Dataflow → BigQuery')"
+                placeholder="Describe your data architecture... (e.g., 'MySQL → Kafka → Spark → BigQuery → Looker')"
                 className="w-full px-4 py-3 rounded-lg bg-white/10 text-white placeholder-white/60 border border-white/20 focus:outline-none focus:border-white/40 backdrop-blur-sm resize-none"
                 rows="2"
                 disabled={isRecording || isTranscribing}
@@ -262,8 +265,8 @@ function App() {
             !isTranscribing &&
             availableProviders.length > 0 && (
               <div className="text-white/80 text-sm mt-2">
-                💡 Try: "AWS architecture with ALB, EC2, and RDS" or click 🎤 to
-                speak
+                💡 Try: "Data pipeline from MySQL through Kafka to Spark, then
+                to BigQuery and Looker"
               </div>
             )}
         </div>
@@ -276,17 +279,12 @@ function App() {
               <div className="text-6xl mb-4">📊</div>
               <p className="text-xl">Your diagram will appear here</p>
               <p className="text-sm mt-2">
-                Type a description or use voice input (English/Spanish
-                supported)
+                Describe your data architecture with voice or text
               </p>
-              {availableProviders.length > 0 && (
-                <p className="text-xs mt-4 text-gray-500">
-                  Available providers:{" "}
-                  {availableProviders
-                    .map((p) => `${p.icon} ${p.name}`)
-                    .join(", ")}
-                </p>
-              )}
+              <p className="text-xs mt-4 text-gray-500">
+                Supports: Databases, Warehouses, Lakes, Streaming, ETL, APIs,
+                and more!
+              </p>
             </div>
           </div>
         ) : (
@@ -295,6 +293,7 @@ function App() {
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
+            nodeTypes={nodeTypes}
             fitView
             attributionPosition="bottom-left"
             minZoom={0.1}
@@ -303,7 +302,7 @@ function App() {
             <Background color="#e5e7eb" gap={16} />
             <Controls />
             <MiniMap
-              nodeColor={() => "#3b82f6"}
+              nodeColor={(node) => node.data.iconColor || "#3b82f6"}
               maskColor="rgba(0, 0, 0, 0.1)"
             />
           </ReactFlow>
