@@ -1,16 +1,10 @@
-import { useState, useRef, useEffect, useMemo } from "react";
-import ReactFlow, {
-  Background,
-  Controls,
-  MiniMap,
-  useNodesState,
-  useEdgesState,
-} from "reactflow";
+import { useState, useRef, useEffect } from "react";
+import { ReactFlowProvider, useNodesState, useEdgesState } from "reactflow";
 import "reactflow/dist/style.css";
 import { generateDiagram, transcribeAudio } from "./services/aiService";
 import { mermaidToReactFlow } from "./services/mermaidParser";
 import { getAvailableProviders } from "./services/providerConfig";
-import CustomNode from "./components/CustomNode";
+import DiagramCanvas from "./components/DiagramCanvas";
 
 function App() {
   const [prompt, setPrompt] = useState("");
@@ -22,12 +16,10 @@ function App() {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState("groq");
   const [availableProviders, setAvailableProviders] = useState([]);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
-
-  // Register custom node types
-  const nodeTypes = useMemo(() => ({ custom: CustomNode }), []);
 
   useEffect(() => {
     const providers = getAvailableProviders();
@@ -234,14 +226,25 @@ function App() {
             </button>
 
             {nodes.length > 0 && (
-              <button
-                onClick={clearDiagram}
-                disabled={isRecording || isTranscribing}
-                className="px-6 py-3 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-all disabled:opacity-50"
-                title="Clear diagram"
-              >
-                🗑️ Clear
-              </button>
+              <>
+                <button
+                  onClick={() => setIsExportMenuOpen(true)}
+                  disabled={isRecording || isTranscribing}
+                  className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-all disabled:opacity-50 flex items-center gap-2"
+                  title="Export diagram"
+                >
+                  📥 Export
+                </button>
+
+                <button
+                  onClick={clearDiagram}
+                  disabled={isRecording || isTranscribing}
+                  className="px-6 py-3 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-all disabled:opacity-50"
+                  title="Clear diagram"
+                >
+                  🗑️ Clear
+                </button>
+              </>
             )}
           </div>
 
@@ -273,40 +276,17 @@ function App() {
       </div>
 
       <div className="flex-1 relative">
-        {nodes.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <div className="text-6xl mb-4">📊</div>
-              <p className="text-xl">Your diagram will appear here</p>
-              <p className="text-sm mt-2">
-                Describe your data architecture with voice or text
-              </p>
-              <p className="text-xs mt-4 text-gray-500">
-                Supports: Databases, Warehouses, Lakes, Streaming, ETL, APIs,
-                and more!
-              </p>
-            </div>
-          </div>
-        ) : (
-          <ReactFlow
+        <ReactFlowProvider>
+          <DiagramCanvas
             nodes={nodes}
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            nodeTypes={nodeTypes}
-            fitView
-            attributionPosition="bottom-left"
-            minZoom={0.1}
-            maxZoom={4}
-          >
-            <Background color="#e5e7eb" gap={16} />
-            <Controls />
-            <MiniMap
-              nodeColor={(node) => node.data.iconColor || "#3b82f6"}
-              maskColor="rgba(0, 0, 0, 0.1)"
-            />
-          </ReactFlow>
-        )}
+            isExportMenuOpen={isExportMenuOpen}
+            setIsExportMenuOpen={setIsExportMenuOpen}
+            prompt={prompt}
+          />
+        </ReactFlowProvider>
       </div>
     </div>
   );
